@@ -1,12 +1,13 @@
 package hu.jnagy.lists;
 
+import org.hamcrest.core.Is;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -18,7 +19,7 @@ public class SumOfListsTest {
 
     @Before
     public void setUp() {
-        sumOfLists = new SumOfLists();
+        sumOfLists = new SumOfLists(null);
     }
 
     @Test
@@ -64,10 +65,39 @@ public class SumOfListsTest {
     @Test
     public void shouldSumOfRandomNumberList() {
         //Given
-        IntStream list = new Random(1).ints(1, 5).limit(5);
+        NumberProvider mockNumberProvider = Mockito.mock(NumberProvider.class);
+        Mockito.when(mockNumberProvider.provide(false)).thenReturn(1);
+        sumOfLists = new SumOfLists(mockNumberProvider);
         //When
-        int sum = sumOfLists.getSumOfRandomNumbers(list);
+        int sum = sumOfLists.getSumOfRandomNumbers();
         //Then
-        assertTrue(5 <= sum);
+        assertTrue(3 == sum);
+    }
+
+    @Test
+    public void whenExceptionThenReturnZero() {
+        //Given
+        NumberProvider mockNumberProvider = Mockito.mock(NumberProvider.class);
+        Mockito.when(mockNumberProvider.provide(false)).thenReturn(1).thenReturn(2).thenThrow(new RuntimeException());
+        sumOfLists = new SumOfLists(mockNumberProvider);
+        //When
+        int sum = sumOfLists.getSumOfRandomNumbers();
+        //Then
+        Mockito.verify(mockNumberProvider, Mockito.times(3)).provide(false);
+        Assert.assertThat(sum, Is.is(0));
+    }
+
+    @Test
+    public void whenSumOfListSetNegateTrueThenNegative() {
+        //Given
+        NumberProvider mockNumberProvider = Mockito.mock(NumberProvider.class);
+        Mockito.when(mockNumberProvider.provide(true)).thenReturn(-1);
+        sumOfLists = new SumOfLists(mockNumberProvider);
+        sumOfLists.setNegate(true);
+        //When
+        int sum = sumOfLists.getSumOfRandomNumbers();
+        //Then
+        assertThat(sum, Is.is(-3));
+        Mockito.verify(mockNumberProvider, Mockito.times(3)).provide(true);
     }
 }
